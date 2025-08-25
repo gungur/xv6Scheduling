@@ -1,0 +1,1 @@
+P4_TESTER:test_3.c:75 Parent got 40 ticks, child got 89 ticks, parent should be within a 2 margin of half the child ticks
