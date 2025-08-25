@@ -1,111 +1,172 @@
-# Install docker
+# xv6 Scheduling Project
 
-Follow the instructions on Docker's official website to [install Docker](https://docs.docker.com/engine/install/) in your machine. Make sure you install Docker Compose as well.
+This project involves modifying the xv6 operating system to implement and test different CPU scheduling algorithms. The provided setup uses Docker to create a consistent development environment for building and running xv6.
 
-To verify if Docker is installed correctly, run:
+## Project Overview
+
+The goal of this project is to implement and analyze different CPU scheduling algorithms in xv6. The project includes:
+
+- **Dockerized development environment** for consistent builds
+- **Testing framework** with multiple test cases
+- **Process statistics collection** for analyzing scheduler behavior
+- **Round-robin and stride scheduling** implementations
+
+Key files include:
+- `rr_process_stats.csv` and `stride_process_stats.csv`: Scheduler performance data
+- Multiple test cases (`test_1.c`, `test_2.c`, `test_3.c`) for validation
+- Helper scripts for building and testing
+
+## Prerequisites
+
+- **Docker**: Required for containerized development environment
+- **Docker Compose**: For managing the container environment
+- **Git**: For version control and cloning the repository
+
+## Setup Instructions
+
+### 1. Install Docker
+
+Follow the official Docker installation guide for your platform:
+[https://docs.docker.com/engine/install/](https://docs.docker.com/engine/install/)
+
+Verify your installation:
 ```bash
 docker run hello-world
-```
-
-If the installation is successful, you should see the following message:
-```
-Hello from Docker!
-This message shows that your installation appears to be working correctly.
-...
-```
-
-To verify if Docker compose is installed, run:
-```bash
 docker compose version
 ```
-You should see something similar to the following:
+
+### 2. Clone and Setup the Project
+
+```bash
+git clone <repository-url>
+cd <project-directory>
 ```
-Docker Compose version v...
-```
 
-NOTE: Docker is already installed in CSL machines. To start the service in CSL, follow the instructions in [this page](https://csl.cs.wisc.edu/docs/csl/docker/).
+### 3. Build the Docker Image
 
-For an introduction to Docker, you can look at this [lecture on Wed, Sep 13](https://tyler.caraza-harter.com/cs544/f23/schedule.html) 
-
-
-
-# Setup a Container for xv6
-
-Clone this repository and navigate to the directory where the `docker-compose.yml` and `Dockerfile` are located.
-
-
-### Build the Docker Image locally
-
-Run the following command to build the Docker image: 
 ```bash
 docker build -t cs537-v1 --platform=linux/amd64 .
 ```
 
-It should create a Docker image named `cs537-v1`. You can verify the image exists by running: 
+Verify the image was created:
 ```bash
 docker images
-```   
+```
 
-### Bring up the Docker Compose Environment
+### 4. Start the Development Environment
 
-Start the container with Docker Compose by running:
 ```bash
 docker compose up -d
 ```
 
-This will start a container named `cs537`. You can verify it by running: 
+Verify the container is running:
 ```bash
 docker ps -a
 ```
 
-You should also see a new directory `cs537` in the current folder. This directory is mounted to `/cs537` inside the container, meaning any changes you make in `./cs537` on your host machine will be reflected in the container's `/cs537` directory.
+### 5. Access the Container
 
-
-### Access the container
-
-To access the container, run:
 ```bash
 docker exec -it cs537 bash
 ```
 
-It opens a bash session inside the container. You can run this command multiple times to open multiple bash sessions in the same container.
+## Running xv6
 
+1. Copy your `xv6-public` folder to the host's `cs537` directory (this automatically syncs with the container)
+2. Inside the container, navigate to the xv6 directory:
+   ```bash
+   cd /cs537/xv6-public
+   ```
+3. Build and run xv6:
+   ```bash
+   make qemu-nox
+   ```
 
-### Setup xv6
+## Testing Framework
 
-Copy your `xv6-public` folder to the `cs537` directory of your host machine. This will be reflected as `/cs537/xv6-public` inside the container. 
+The project includes a comprehensive testing framework to validate your scheduler implementation.
 
-To build and run xv6, bash into the container, navigate to `/cs537/xv6-public`, and run:
+### Running Tests
+
+Execute all tests:
 ```bash
-make qemu-nox
-``` 
+./run-tests.sh
+```
 
+Test options:
+- `-h`: Show help message
+- `-v`: Verbose output
+- `-t n`: Run only test n
+- `-c`: Continue after failures
+- `-d testdir`: Use alternative test directory
+- `-s`: Skip pre-test initialization
 
-### Stop the container
+### Test Structure
 
-Once you're done using the container, you can stop it with:
+Tests are located in `tests/tests/` with the following files for each test number `n`:
+- `n.rc`: Expected return code
+- `n.out`: Expected standard output
+- `n.err`: Expected standard error  
+- `n.run`: Test execution command
+- `n.desc`: Test description
+- `n.pre`/`n.post`: Optional setup/cleanup scripts
+
+### Available Tests
+
+1. **Test 1**: Verifies process statistics collection and default ticket allocation
+2. **Test 2**: Validates pass value incrementation according to stride scheduling
+3. **Test 3**: Tests proportional sharing between parent and child processes
+
+## Adding New Tests
+
+To add a new test case:
+
+1. Create `test_n.c` in the `tests/tests/` directory
+2. Add the expected output files (`n.rc`, `n.out`, `n.err`)
+3. Create `n.run` with the test execution command
+4. Add a description in `n.desc`
+5. Update the `pre` file to include your test (follow existing patterns)
+
+Run your new test:
+```bash
+./run-tests.sh -t n
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Docker permission denied**: Add your user to the docker group or use sudo
+2. **Container won't start**: Check if ports are already in use
+3. **xv6 build failures**: Ensure all dependencies are installed in the container
+4. **Test failures**: Verify your scheduler implementation matches expected behavior
+
+### Getting Help
+
+- Check the [xv6 documentation](https://pdos.csail.mit.edu/6.828/2014/xv6.html)
+- Review the provided test cases for implementation guidance
+- Consult the CSL Docker documentation for machine-specific issues
+
+### Container Management
+
+Stop the container when not in use:
 ```bash
 docker stop cs537
 ```
 
-Stopping the container does not delete it or the work inside.
+Restart later:
+```bash
+docker start cs537
+docker exec -it cs537 bash
+```
 
+## 📊 Performance Analysis
 
-# Reusing the container 
+The project includes CSV files (`rr_process_stats.csv` and `stride_process_stats.csv`) that capture scheduler performance metrics. These can be analyzed to understand:
 
-Once the docker image and the container are created, it will remain saved in your machine. So, the next time you want to use this container, follow these steps:
+- CPU time allocation across processes
+- Ticket distribution effects on scheduling
+- Pass value progression in stride scheduling
+- Runtime comparisons between different scheduling algorithms
 
-1. **Start the container**
-    ```bash 
-    docker start cs537
-    ```
-
-2. **Access the container with bash**
-    ```bash
-    docker exec -it cs537 bash
-    ```
-
-3.  **Stop the container**
-    ```bash
-    docker stop cs537
-    ```
+Use these data files to validate your implementation and analyze the behavior of your scheduler under different workloads.
